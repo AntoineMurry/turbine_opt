@@ -16,7 +16,7 @@ from papillon.data import DATA_SOURCE
 
 pd.set_option('display.width', 200)
 
-RADIUS = 100
+RADIUS = 10
 
 
 def read_data(data_file):
@@ -42,6 +42,42 @@ def cpt_blades_imbalance(disk):
     fx = disk.w * math.cos(disk.bl_angle) * RADIUS
     fy = disk.w * math.sin(disk.bl_angle) * RADIUS
     return fx, fy
+
+
+def proba_sampling(ordered_index, alpha, num_of_blades):
+    """
+    compute probability for bernoulli sampling.
+    The probability function is linear as a function of
+    weight.
+    """
+    proba = ordered_index * math.tan(math.radians(alpha)) / num_of_blades
+    if proba > 1:
+        return 1
+    else:
+        return proba
+
+
+def dispose_blades(disk):
+    """
+    dispose blades on disk to minimize unbalance
+    TODO
+    """
+    disk = disk.sort_values(['w'])
+    disk = disk.reset_index()
+    disk['index'] = disk.index
+    group1, group2 = group_creation(disk)
+
+
+def group_creation(disk):
+    """
+    split blades into 2 groups using radom sampling
+    based on weight
+    """
+    disk.loc[:, 'proba'] = disk['index'].apply(proba_sampling,
+                                            args=(alpha, disk.shape[0]))
+    disk.loc[:, 'large_group'] = disc.proba.apply(np.random.binomial, args=(n=1))
+    # TODO: get binomial function working
+
 
 
 class Simulated_annealing:
@@ -115,27 +151,30 @@ def temperature(k, kmax):
     """ Example of temperature dicreasing as the process goes on."""
     return max(0.01, min(1, 1 - float(k)/float(kmax)))
 
+def plot_blades(disk):
+    """
+    """
+    wmin = disk.w.min()
+    X = disk.bl_angle.map(math.cos) * disk.w * RADIUS
+    xplot = disk.bl_angle.map(math.cos) * (disk.w - wmin) * RADIUS
+    Y = disk.bl_angle.map(math.sin) * disk.w * RADIUS
+    yplot = disk.bl_angle.map(math.sin) * (disk.w - wmin) * RADIUS
+    plt.scatter(xplot, yplot, color='red')
+    plt.show()
 
 
 if __name__ == '__main__':
 
-    init_state = random_start()
-    chg_state_func = random_neighbour
-    ener_func = cost_function
-    temp_func = temperature
-    max_steps = 100000
-    accept_proba = acceptance_probability
-
-
-    #TODO: finish testing this fist funtion. inspiration = https://perso.crans.org/besson/notebooks/Simulated_annealing_in_Python.html
-
-    Simu = Simulated_annealing(init_state, chg_state_func, ener_func, temp_func,
-            max_steps, accept_proba)
+    # init_state = random_start()
+    # chg_state_func = random_neighbour
+    # ener_func = cost_function
+    # temp_func = temperature
+    # max_steps = 100000
+    # accept_proba = acceptance_probability
+    # Simu = Simulated_annealing(init_state, chg_state_func, ener_func,
+    #                            temp_func, max_steps, accept_proba)
 
     # plotting unbalance:
-    # data_file = os.path.join(DATA_SOURCE, "input-data.csv")
-    # disk = read_data(data_file)
-    # X = [disk.bl_angle.map(math.cos) * disk.w]
-    # Y = [disk.bl_angle.map(math.sin) * disk.w]
-    # plt.scatter(X,Y, color='red')
-    # plt.show()
+    data_file = os.path.join(DATA_SOURCE, "input-data.csv")
+    disk = read_data(data_file)
+    plot_blades(disk)
