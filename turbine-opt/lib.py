@@ -79,8 +79,10 @@ def group_creation(disk, alpha):
     while picked.sum() != disk.shape[0]/2:
         picked = disk.proba.apply(picking_blades)
     disk['picked'] = picked
-    group1 = disk[disk.picked == 0]
-    group2 = disk[disk.picked == 1]
+    group1 = disk[disk.picked == 0].reset_index(drop=True)
+    group2 = disk[disk.picked == 1].reset_index(drop=True)
+    group1['index'] = group1.index
+    group2['index'] = group2.index
     return group1, group2
 
 
@@ -193,8 +195,26 @@ if __name__ == '__main__':
     alpha = 45
     group1, group2 = group_creation(disk, alpha)
 
+    df = pd.DataFrame(columns=group1.columns, index=group1.index)
+    ind_first_bl = int((group1.shape[0]/2 + 1)/2) - 1
+    ind_seco_bl = int((group1.shape[0]/2 + 1)/2 + group1.shape[0]/2) - 1
+    df.iloc[ind_first_bl, :] = group1.iloc[0, :]
+    df.iloc[ind_seco_bl, :] = group1.iloc[1, :]
 
-    # disk = disk.sort_values(['w'])
-    # disk = disk.reset_index()
-    # disk['index'] = disk.index
-    # group1, group2 = group_creation(disk, alpha=45)
+    para = 0
+    for blades in range(2, group1.shape[0], 4):
+        depo_blade_1 = int((group1.shape[0]/2 + para + 3) / 2 +
+                           group1.shape[0]/2) - 1
+        depo_blade_2 = int((group1.shape[0]/2 - para - 1) / 2) - 1
+        depo_blade_3 = int((group1.shape[0]/2 + para + 3) / 2) - 1
+        depo_blade_4 = int((group1.shape[0]/2 - para - 1) / 2 +
+                           group1.shape[0]/2) - 1
+        para = para + 2
+        df.iloc[depo_blade_1, :] = group1.iloc[blades, :]
+        df.iloc[depo_blade_2, :] = group1.iloc[blades + 1, :]
+        df.iloc[depo_blade_3, :] = group1.iloc[blades + 2, :]
+        df.iloc[depo_blade_4, :] = group1.iloc[blades + 3, :]
+
+    # lobe creation
+
+
