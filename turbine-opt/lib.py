@@ -57,7 +57,7 @@ def proba_sampling(ordered_index, alpha, num_of_blades):
         return proba
 
 
-def dispose_blades(disk):
+def dispose_blades(disk, alpha=45):
     """
     dispose blades on disk to minimize unbalance
     TODO
@@ -65,19 +65,23 @@ def dispose_blades(disk):
     disk = disk.sort_values(['w'])
     disk = disk.reset_index()
     disk['index'] = disk.index
-    group1, group2 = group_creation(disk)
+    group1, group2 = group_creation(disk, alpha)
 
 
-def group_creation(disk):
+def group_creation(disk, alpha):
     """
     split blades into 2 groups using radom sampling
     based on weight
     """
     disk.loc[:, 'proba'] = disk['index'].apply(proba_sampling,
-                                            args=(alpha, disk.shape[0]))
-    disk.loc[:, 'large_group'] = disc.proba.apply(np.random.binomial, args=(n=1))
-    # TODO: get binomial function working
-
+                                               args=(alpha, disk.shape[0]))
+    picked = disk.proba.apply(picking_blades)
+    while picked.sum() != disk.shape[0]/2:
+        picked = disk.proba.apply(picking_blades)
+    disk['picked'] = picked
+    group1 = disk[disk.picked == 0]
+    group2 = disk[disk.picked == 1]
+    return group1, group2
 
 
 class Simulated_annealing:
@@ -162,6 +166,9 @@ def plot_blades(disk):
     plt.scatter(xplot, yplot, color='red')
     plt.show()
 
+def picking_blades(p):
+    return np.random.binomial(1, p)
+
 
 if __name__ == '__main__':
 
@@ -177,4 +184,17 @@ if __name__ == '__main__':
     # plotting unbalance:
     data_file = os.path.join(DATA_SOURCE, "input-data.csv")
     disk = read_data(data_file)
-    plot_blades(disk)
+    # plot_blades(disk)
+
+    # dispose_blades(disk, alpha=45):
+    disk = disk.sort_values(['w'])
+    disk = disk.reset_index()
+    disk['index'] = disk.index
+    alpha = 45
+    group1, group2 = group_creation(disk, alpha)
+
+
+    # disk = disk.sort_values(['w'])
+    # disk = disk.reset_index()
+    # disk['index'] = disk.index
+    # group1, group2 = group_creation(disk, alpha=45)
