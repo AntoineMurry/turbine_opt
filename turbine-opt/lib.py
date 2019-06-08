@@ -60,12 +60,14 @@ def proba_sampling(ordered_index, alpha, num_of_blades):
 def dispose_blades(disk, alpha=45):
     """
     dispose blades on disk to minimize unbalance
-    TODO
     """
-    disk = disk.sort_values(['w'])
+    disk = disk.sort_values(['w'], ascending=False)
     disk = disk.reset_index()
     disk['index'] = disk.index
     group1, group2 = group_creation(disk, alpha)
+    group1 = build_lobes(group1)
+    group2 = build_lobes(group2)
+    return group1, group2
 
 
 def group_creation(disk, alpha):
@@ -172,6 +174,35 @@ def picking_blades(p):
     return np.random.binomial(1, p)
 
 
+def build_lobes(group):
+    """
+    creates 2 lobes from an input group of blades
+    :input:
+        group :: pd.DataFrame corresponding to group of blades
+    Note: this only works if the number of rows of group is a
+    multiple of 2
+    """
+    df = pd.DataFrame(columns=group.columns, index=group.index)
+    ind_first_bl = int((group.shape[0]/2 + 1)/2) - 1
+    ind_seco_bl = int((group.shape[0]/2 + 1)/2 + group.shape[0]/2) - 1
+    df.iloc[ind_first_bl, :] = group.iloc[0, :]
+    df.iloc[ind_seco_bl, :] = group.iloc[1, :]
+
+    para = 0
+    for blades in range(2, group.shape[0], 4):
+        depo_blade_1 = int((group.shape[0]/2 + para + 3) / 2 +
+                           group.shape[0]/2) - 1
+        depo_blade_2 = int((group.shape[0]/2 - para - 1) / 2) - 1
+        depo_blade_3 = int((group.shape[0]/2 + para + 3) / 2) - 1
+        depo_blade_4 = int((group.shape[0]/2 - para - 1) / 2 +
+                           group.shape[0]/2) - 1
+        para = para + 2
+        df.iloc[depo_blade_1, :] = group.iloc[blades, :]
+        df.iloc[depo_blade_2, :] = group.iloc[blades + 1, :]
+        df.iloc[depo_blade_3, :] = group.iloc[blades + 2, :]
+        df.iloc[depo_blade_4, :] = group.iloc[blades + 3, :]
+    return df
+
 if __name__ == '__main__':
 
     # init_state = random_start()
@@ -188,33 +219,25 @@ if __name__ == '__main__':
     disk = read_data(data_file)
     # plot_blades(disk)
 
-    # dispose_blades(disk, alpha=45):
-    disk = disk.sort_values(['w'])
-    disk = disk.reset_index()
-    disk['index'] = disk.index
-    alpha = 45
-    group1, group2 = group_creation(disk, alpha)
+    group1, group2 = dispose_blades(disk, alpha=45)
+    disk = pd.concat([group1, group2]).reset_index(drop=True)
+    # plot_blades(disk)
 
-    df = pd.DataFrame(columns=group1.columns, index=group1.index)
-    ind_first_bl = int((group1.shape[0]/2 + 1)/2) - 1
-    ind_seco_bl = int((group1.shape[0]/2 + 1)/2 + group1.shape[0]/2) - 1
-    df.iloc[ind_first_bl, :] = group1.iloc[0, :]
-    df.iloc[ind_seco_bl, :] = group1.iloc[1, :]
+    wmin = disk.w.min()
+    # X = disk.bl_angle.map(math.cos) * disk.w * RADIUS
+    xplot = disk.bl_angle.map(math.cos) * (disk.w - wmin) * RADIUS
+    # Y = disk.bl_angle.map(math.sin) * disk.w * RADIUS
+    yplot = disk.bl_angle.map(math.sin) * (disk.w - wmin) * RADIUS
+    # plt.scatter(xplot, yplot, color='red')
+    # plt.show()
 
-    para = 0
-    for blades in range(2, group1.shape[0], 4):
-        depo_blade_1 = int((group1.shape[0]/2 + para + 3) / 2 +
-                           group1.shape[0]/2) - 1
-        depo_blade_2 = int((group1.shape[0]/2 - para - 1) / 2) - 1
-        depo_blade_3 = int((group1.shape[0]/2 + para + 3) / 2) - 1
-        depo_blade_4 = int((group1.shape[0]/2 - para - 1) / 2 +
-                           group1.shape[0]/2) - 1
-        para = para + 2
-        df.iloc[depo_blade_1, :] = group1.iloc[blades, :]
-        df.iloc[depo_blade_2, :] = group1.iloc[blades + 1, :]
-        df.iloc[depo_blade_3, :] = group1.iloc[blades + 2, :]
-        df.iloc[depo_blade_4, :] = group1.iloc[blades + 3, :]
-
-    # lobe creation
-
-
+    import matplotlib.pyplot as plt
+    import numpy as np
+    for x in range(len(xplot)):
+        plt.plot([0, xplot[x]],[0,yplot[x]],'ro-',label='python')
+    limit=np.max(np.ceil(np.absolute(xplot).astype(int))) # set limits for axis
+    plt.xlim((-limit,limit))
+    plt.ylim((-limit,limit))
+    plt.ylabel('Imaginary')
+    plt.xlabel('Real')
+    plt.show()
