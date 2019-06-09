@@ -94,13 +94,14 @@ class Simulated_annealing:
     encapsulated simulated annealing class
     """
     def __init__(self, init_state, chg_state_func, ener_func, temp_func,
-                 max_steps, accept_proba):
+                 max_steps, accept_proba, search_param):
         self.init_state = init_state
         self.chg_state_func = chg_state_func
         self.ener_func = ener_func
         self.temp_func = temp_func
         self.max_steps = max_steps
         self.accept_proba = accept_proba
+        self.search_param = search_param
 
     def optimize(self):
         state = self.init_state
@@ -110,7 +111,7 @@ class Simulated_annealing:
             # print(k, ":k")
             # print(self.max_steps, ": self.max_steps")
             temp = self.temp_func(k, self.max_steps)
-            state_new = self.chg_state_func(state)
+            state_new = self.chg_state_func(state, search_param)
             # print(temp, ": temperature")
             # print(max(0.01, min(1, 1 - float(k)/float(self.max_steps))), ":computed temp")
             state_ener = self.ener_func(state)
@@ -240,11 +241,37 @@ def split_in_groups(disk):
     return group1, group2
 
 
-def random_neighbour_disk(disk):
+def search_rand_blades(group1, group2, search_param=10):
+    """
+    """
+    rand1 = random.randrange(0, group1.shape[0])
+    if (rand1 + search_param > group1.index.max()):
+        w_min = group1.loc[(rand1 - search_param)].w
+        w_max = group1.loc[group1.index.max()].w
+    elif (rand1 - search_param < group1.index.min()):
+        w_min = group1.loc[group1.index.min()].w
+        w_max = group1.loc[rand1 + search_param].w
+    else:
+        w_min = group1.loc[(rand1 - search_param)].w
+        w_max = group1.loc[rand1 + search_param].w
+
+    min_index = group2[(group2.w - w_min).apply(abs) ==
+                       abs(group2.w - w_min).min()].index[0]
+    max_index = group2[(group2.w - w_max).apply(abs) ==
+                       abs(group2.w - w_max).min()].index[0]
+    choice = group2[min_index : max_index + 1]
+
+    rand2 = random.randrange(choice.index.min(),
+                             choice.index.max())
+    return rand1, rand2
+
+
+def random_neighbour_disk(disk, search_param):
     """swap a blade from group 1 with a blade from group 2"""
     group1, group2 = split_in_groups(disk)
-    rand1 = random.randrange(0, group1.shape[0])
-    rand2 = random.randrange(0, group2.shape[0])
+    group1 = group1.sort_values(['w']).reset_index(drop=True)
+    group2 = group2.sort_values(['w']).reset_index(drop=True)
+    rand1, rand2 = search_rand_blades(group1, group2)
     temp2 = group2.iloc[rand2, :].copy(deep=True)
     temp1 = group1.iloc[rand1, :].copy(deep=True)
     group2.iloc[rand2, :] = temp1
@@ -281,9 +308,11 @@ if __name__ == '__main__':
     ener_func = cost_function_unbalance
     temp_func = temperature
     max_steps = 500
+    search_param = 50
     accept_proba = acceptance_probability
     Simu = Simulated_annealing(init_state, chg_state_func, ener_func,
-                               temp_func, max_steps, accept_proba)
+                               temp_func, max_steps, accept_proba,
+                               search_param)
     group1, group2 = split_in_groups(disk)
     res = Simu.optimize()
     plot_blades(res)
