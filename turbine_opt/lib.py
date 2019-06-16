@@ -77,7 +77,6 @@ def group_creation(disk, alpha):
     picked = disk.proba.apply(picking_blades)
     while picked.sum() != disk.shape[0]/2:
         picked = disk.proba.apply(picking_blades)
-        print(picked.sum(), ": sum of picks")
     disk['picked'] = picked
     group1 = disk[disk.picked == 0].reset_index(drop=True)
     group2 = disk[disk.picked == 1].reset_index(drop=True)
@@ -111,7 +110,6 @@ class Simulated_annealing:
             # state_new = self.chg_state_func(state, search_param)
             state_new = self.chg_state_func(state)
             print(temp, ": temperature")
-            # print(max(0.01, min(1, 1 - float(k)/float(self.max_steps))), ":computed temp")
             state_ener = self.ener_func(state)
             state_nw_ener = self.ener_func(state_new)
             print(state_nw_ener, ": state_nw_ener")
@@ -303,6 +301,8 @@ def random_neighbour_disk(disk): #, search_param):
     # print((group1.loc[rand1].w > group2.w).value_counts())
     group1 = build_lobes(group1)
     group2 = build_lobes(group2)
+    print(group1.w.sum(), ': group1.w.sum')
+    print(group2.w.sum(), ': group2.w.sum')
     return concat_groups(group1, group2)
 
 
@@ -319,8 +319,8 @@ if __name__ == '__main__':
     disk = read_data(data_file)
 
     print("start preplacing blades")
-    # alpha=0.05
-    alpha = 0.01
+    alpha=0.05
+    # alpha = 0.01
     # group1, group2 = group_creation(disk, alpha)
     group1, group2 = dispose_blades(disk, alpha)
     disposed = concat_groups(group1, group2)
@@ -332,16 +332,16 @@ if __name__ == '__main__':
     # # fx, fy = cpt_blades_imbalance(disk)
     # # unbalance_blades = math.sqrt(fx.sum() * fx.sum() + fy.sum() * fy.sum())
 
-    # init_state = disk
-    # chg_state_func = random_neighbour_disk
-    # ener_func = cost_function_unbalance
-    # temp_func = temperature
-    # max_steps = 500
-    # search_param = 50
-    # accept_proba = acceptance_probability
-    # Simu = Simulated_annealing(init_state, chg_state_func, ener_func,
-    #                            temp_func, max_steps, accept_proba,
-    #                            search_param)
-    # group1, group2 = split_in_groups(disk)
-    # res = Simu.optimize()
-    # plot_blades(res)
+    init_state = disk
+    chg_state_func = random_neighbour_disk
+    ener_func = cost_function_unbalance
+    temp_func = temperature
+    max_steps = 500
+    search_param = 50
+    accept_proba = acceptance_probability
+    Simu = Simulated_annealing(init_state, chg_state_func, ener_func,
+                               temp_func, max_steps, accept_proba,
+                               search_param)
+    group1, group2 = split_in_groups(disk)
+    res = Simu.optimize()
+    plot_blades(res)
