@@ -5,8 +5,8 @@ clean:
 	@rm -fr __pycache__
 	@rm -fr build
 	@rm -fr dist
-	@rm -fr turbine-opt-*.dist-info
-	@rm -fr turbine-opt.egg-info
+	@rm -fr turbine_opt-*.dist-info
+	@rm -fr turbine_opt.egg-info
 
 all: clean install test check_code
 
@@ -40,7 +40,7 @@ check_code:
 
 test:
 	@coverage run -m unittest tests/*.py
-	@coverage report -m --omit=$(VIRTUAL_ENV)/lib/python*,turbine-opt/*
+	@coverage report -m --omit=$(VIRTUAL_ENV)/lib/python*,turbine_opt/*
 ftest:
 	@Write me
 

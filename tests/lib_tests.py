@@ -6,8 +6,8 @@ import unittest
 # Import from classical libraries
 import pandas as pd
 
-from turbine-opt.tests.data import DATA_SOURCE_TEST
-from turbine-opt.lib import group_creation
+from turbine_opt.tests.data import DATA_SOURCE_TEST
+from turbine_opt.lib import group_creation
 
 
 class TestUtils(unittest.TestCase):
