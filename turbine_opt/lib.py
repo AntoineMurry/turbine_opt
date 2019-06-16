@@ -24,7 +24,7 @@ def read_data(data_file):
     """
     reads input vector, computes all angles
     :input:
-        data_file: path to file
+        data_file :: path to file
     """
     disk = pd.read_csv(data_file)
     disk.loc[:, 'bl_angle'] = disk.blade * 360/disk.shape[0]
@@ -38,7 +38,7 @@ def cpt_blades_imbalance(disk):
     on vector of blades mass and
     on vector of blades angles
     :input:
-        :disk: pd.DataFrame read from read_data
+        disk :: pd.DataFrame read from read_data
     """
     fx = disk.w * disk.bl_angle.map(math.cos) * RADIUS
     fy = disk.w * disk.bl_angle.map(math.sin) * RADIUS
@@ -100,88 +100,69 @@ class Simulated_annealing:
         self.search_param = search_param
 
     def optimize(self):
-        state = self.init_state
+        state = self.init_state.copy()
         print('def final state')
-        final_state = self.init_state
+        final_state = self.init_state.copy()
+        state_new = self.init_state.copy()
         for k in range(self.max_steps):
-            # print(k, ":k")
-            # print(self.max_steps, ": self.max_steps")
+            final_en = self.ener_func(final_state)
             temp = self.temp_func(k, self.max_steps)
-            # state_new = self.chg_state_func(state, search_param)
-            state_new = self.chg_state_func(state)
-            print(temp, ": temperature")
+            state_new.loc[:, ['w',
+                              'blade',
+                              'ht']] = self.chg_state_func(state,
+                                                           final_en)[['w',
+                                                                   'blade',
+                                                                   'ht']]
             state_ener = self.ener_func(state)
             state_nw_ener = self.ener_func(state_new)
             print(state_nw_ener, ": state_nw_ener")
             proba = accept_proba(state_ener,
                                  state_nw_ener,
                                  temp)
-            print(self.ener_func(final_state), ": self.ener_func(final state)")
+            print(final_en, ": self.ener_func(final state)")
             if proba > np.random.sample():
-                state = state_new
-            if self.ener_func(state) < self.ener_func(final_state):
-                print('<<<<<<<<<OOOOKKKK>>>>>>>>>')
-                final_state = state
+                state = state_new.copy()
+            if self.ener_func(state) < final_en:
+                final_state = state.copy()
         return final_state
 
 
-# temporary functions defined for initial test:
-
-INTERVAL = (-100, 100)
-
-def f(x):
-    """ Function to minimize."""
-    return x ** 2
-
-
-def clip(x):
-    """ Force x to be in the interval."""
-    a, b = INTERVAL
-    return max(min(x, b), a)
-
-
-def random_start():
-    """ Random point in the interval."""
-    a, b = INTERVAL
-    return a + (b - a) * rn.random_sample()
-
-
-def cost_function(x):
-    """ Cost of x = f(x)."""
-    return f(x)
-
-
-def random_neighbour(x, fraction=1):
-    """Move a little bit x, from the left or the right."""
-    amplitude = (max(INTERVAL) - min(INTERVAL)) * fraction / 10
-    delta = (-amplitude/2.) + amplitude * rn.random_sample()
-    return clip(x + delta)
-
-
-def acceptance_probability(cost, new_cost, temperature):
-    if new_cost < cost:
-        # print("    - Acceptance probabilty = 1 as new_cost = {} < cost = {}...".format(new_cost, cost))
+def acceptance_probability(energy, new_energy, temperature):
+    """
+    acceptance probability function, which decreases with
+    temperature
+    :input:
+        energy :: energy function from current state
+        new_energy :: energy function from new state
+        temperature :: value of temperature from temperature function
+    """
+    if new_energy < energy:
         return 1
     else:
-        p = np.exp(- (new_cost - cost) / temperature)
-        # print("    - Acceptance probabilty = {:.3g}...".format(p))
+        p = np.exp(- (new_energy - energy) / temperature)
         return p
 
 
 def temperature(k, kmax):
-    """ Example of temperature dicreasing as the process goes on."""
+    """
+    decreasing temperature function
+    :input:
+        k :: current iteration
+        kmax :: max number of iterations
+    """
     return max(0.01, min(1, 1 - float(k)/float(kmax)))
 
 
 def plot_blades(disk):
     """
+    function to display blade weights on the turbine disk
     """
     wmin = disk.w.min()
     xplot = disk.bl_angle.map(math.cos) * (disk.w - wmin) * RADIUS
     yplot = disk.bl_angle.map(math.sin) * (disk.w - wmin) * RADIUS
     for x in range(len(xplot)):
         plt.plot([0, xplot[x]],[0,yplot[x]],'ro-',label='python')
-    limit=np.max(np.ceil(np.absolute(xplot).astype(int))) # set limits for axis
+    limit=np.max(np.ceil(np.absolute(xplot).astype(int)))
     plt.xlim((-limit,limit))
     plt.ylim((-limit,limit))
     plt.ylabel('Imaginary')
@@ -272,7 +253,22 @@ def search_rand_blades_2(group1, group2, search_param=10):
     return rand1, rand2
 
 
-def random_neighbour_disk_naive(disk):
+def random_neighbour_disk(disk):
+    """swap a blade from group 1 with a blade from group 2"""
+    group1, group2 = split_in_groups(disk)
+    group1 = group1.sort_values(['w']).reset_index(drop=True)
+    group2 = group2.sort_values(['w']).reset_index(drop=True)
+    rand1, rand2 = search_rand_blades_1(group1.copy(), group2.copy())
+    temp2 = group2.iloc[rand2, :].copy(deep=True)
+    temp1 = group1.iloc[rand1, :].copy(deep=True)
+    group2.iloc[rand2, :] = temp1
+    group1.iloc[rand1, :] = temp2
+    group1 = build_lobes(group1.copy())
+    group2 = build_lobes(group2.copy())
+    return concat_groups(group1, group2)
+
+
+def naive_blade_swap(disk):
     """swap a blade from group 1 with a blade from group 2"""
     group1, group2 = split_in_groups(disk)
     rand1 = random.randrange(0, group1.shape[0])
@@ -281,33 +277,47 @@ def random_neighbour_disk_naive(disk):
     temp1 = group1.iloc[rand1, :].copy(deep=True)
     group2.iloc[rand2, :] = temp1
     group1.iloc[rand1, :] = temp2
-    group1 = build_lobes(group1)
-    group2 = build_lobes(group2)
+    group1 = build_lobes(group1.copy())
+    group2 = build_lobes(group2.copy())
+    print(group2, ": group2")
     return concat_groups(group1, group2)
 
 
-def random_neighbour_disk(disk): #, search_param):
+def boosted_blade_swap(disk):
     """swap a blade from group 1 with a blade from group 2"""
     group1, group2 = split_in_groups(disk)
     group1 = group1.sort_values(['w']).reset_index(drop=True)
     group2 = group2.sort_values(['w']).reset_index(drop=True)
-    rand1, rand2 = search_rand_blades_1(group1, group2)
-    temp2 = group2.iloc[rand2, :].copy(deep=True)
-    temp1 = group1.iloc[rand1, :].copy(deep=True)
-    group2.iloc[rand2, :] = temp1
-    group1.iloc[rand1, :] = temp2
-    # print(temp1, ": blade swap 1")
-    # print(temp2, ": blade swap 2")
-    # print((group1.loc[rand1].w > group2.w).value_counts())
+    group2.loc[:, 'options'] = group2.w < group1.w
+    option_blades = group2[group2.options == True]
+    if len(option_blades) > 0:
+        rand = random.choice(option_blades.index)
+    else:
+        return disk
+    temp2 = group2.iloc[rand, :].copy(deep=True)
+    temp1 = group1.iloc[rand, :].copy(deep=True)
+    group2.iloc[rand, :] = temp1
+    group1.iloc[rand, :] = temp2
     group1 = build_lobes(group1)
     group2 = build_lobes(group2)
-    print(group1.w.sum(), ': group1.w.sum')
-    print(group2.w.sum(), ': group2.w.sum')
     return concat_groups(group1, group2)
+
+
+def random_neighbour_choice(disk, energy):
+    """
+    swap a blade from group 1 with a blade from group 2
+    if energy > 40: use boosted blade swap
+    if energy < 40: use naive blade swap
+    """
+    if energy > 40:
+        return boosted_blade_swap(disk.copy())
+    else:
+        return naive_blade_swap(disk.copy())
 
 
 def concat_groups(group1, group2):
     """
+    concatenate groups of blades to get assembled disk
     """
     disk = pd.concat([group1, group2]).reset_index(drop=True)
     return disk
@@ -329,11 +339,17 @@ if __name__ == '__main__':
     disk.loc[:, ["w", "blade", "ht"]] = disposed[["w", "blade", "ht"]]
     plot_blades(disk)
 
-    # # fx, fy = cpt_blades_imbalance(disk)
-    # # unbalance_blades = math.sqrt(fx.sum() * fx.sum() + fy.sum() * fy.sum())
+    # # tempo test
+    # random.seed(0)
+    # from turbine_opt.data import DATA_SOURCE
+    # data_file = os.path.join(DATA_SOURCE, "test_data/input-data.csv")
+    # disk0 = read_data(data_file)
+    # disk = random_neighbour_disk_2(disk0) #, search_param):
+    # disk2 = random_neighbour_disk_2(disk)
+    # # tempo test end
 
     init_state = disk
-    chg_state_func = random_neighbour_disk
+    chg_state_func = random_neighbour_choice
     ener_func = cost_function_unbalance
     temp_func = temperature
     max_steps = 500
