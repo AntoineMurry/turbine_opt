@@ -39,7 +39,7 @@ check_code:
 	@flake8 scripts/* twt_maps/*.py
 
 test:
-	@coverage run -m unittest tests/*.py
+	@coverage run -m unittest turbine_opt/tests/*.py
 	@coverage report -m --omit=$(VIRTUAL_ENV)/lib/python*,turbine_opt/*
 ftest:
 	@Write me
