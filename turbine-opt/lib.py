@@ -45,20 +45,16 @@ def cpt_blades_imbalance(disk):
     return fx, fy
 
 
-def proba_sampling(ordered_index, alpha, num_of_blades):
+def proba_sampling(ordered_index, alpha=0.05, num_of_blades=140):
     """
     compute probability for bernoulli sampling.
-    The probability function is linear as a function of
-    weight.
+    The probability function is a sigmoid
     """
-    proba = ordered_index * math.tan(math.radians(alpha)) / num_of_blades
-    if proba > 1:
-        return 1
-    else:
-        return proba
+    proba = 1 / (np.exp(alpha * (num_of_blades / 2 - ordered_index)) + 1)
+    return proba
 
 
-def dispose_blades(disk, alpha=45):
+def dispose_blades(disk, alpha=0.05):
     """
     dispose blades on disk to minimize unbalance
     """
@@ -73,7 +69,7 @@ def dispose_blades(disk, alpha=45):
 
 def group_creation(disk, alpha):
     """
-    split blades into 2 groups using radom sampling
+    split blades into 2 groups using random sampling
     based on weight
     """
     disk.loc[:, 'proba'] = disk['index'].apply(proba_sampling,
@@ -81,6 +77,7 @@ def group_creation(disk, alpha):
     picked = disk.proba.apply(picking_blades)
     while picked.sum() != disk.shape[0]/2:
         picked = disk.proba.apply(picking_blades)
+        print(picked.sum(), ": sum of picks")
     disk['picked'] = picked
     group1 = disk[disk.picked == 0].reset_index(drop=True)
     group2 = disk[disk.picked == 1].reset_index(drop=True)
@@ -111,11 +108,13 @@ class Simulated_annealing:
             # print(k, ":k")
             # print(self.max_steps, ": self.max_steps")
             temp = self.temp_func(k, self.max_steps)
-            state_new = self.chg_state_func(state, search_param)
-            # print(temp, ": temperature")
+            # state_new = self.chg_state_func(state, search_param)
+            state_new = self.chg_state_func(state)
+            print(temp, ": temperature")
             # print(max(0.01, min(1, 1 - float(k)/float(self.max_steps))), ":computed temp")
             state_ener = self.ener_func(state)
             state_nw_ener = self.ener_func(state_new)
+            print(state_nw_ener, ": state_nw_ener")
             proba = accept_proba(state_ener,
                                  state_nw_ener,
                                  temp)
@@ -241,7 +240,16 @@ def split_in_groups(disk):
     return group1, group2
 
 
-def search_rand_blades(group1, group2, search_param=10):
+def search_rand_blades_1(group1, group2):
+    """
+    """
+    rand1 = random.choice(group1.index)
+    group2.loc[:, "options"] = group1.loc[rand1].w > group2.w
+    rand2 = random.choice((group2.options == True).index)
+    return rand1, rand2
+
+
+def search_rand_blades_2(group1, group2, search_param=10):
     """
     """
     rand1 = random.randrange(0, group1.shape[0])
@@ -266,16 +274,33 @@ def search_rand_blades(group1, group2, search_param=10):
     return rand1, rand2
 
 
-def random_neighbour_disk(disk, search_param):
+def random_neighbour_disk_naive(disk):
     """swap a blade from group 1 with a blade from group 2"""
     group1, group2 = split_in_groups(disk)
-    group1 = group1.sort_values(['w']).reset_index(drop=True)
-    group2 = group2.sort_values(['w']).reset_index(drop=True)
-    rand1, rand2 = search_rand_blades(group1, group2)
+    rand1 = random.randrange(0, group1.shape[0])
+    rand2 = random.randrange(0, group2.shape[0])
     temp2 = group2.iloc[rand2, :].copy(deep=True)
     temp1 = group1.iloc[rand1, :].copy(deep=True)
     group2.iloc[rand2, :] = temp1
     group1.iloc[rand1, :] = temp2
+    group1 = build_lobes(group1)
+    group2 = build_lobes(group2)
+    return concat_groups(group1, group2)
+
+
+def random_neighbour_disk(disk): #, search_param):
+    """swap a blade from group 1 with a blade from group 2"""
+    group1, group2 = split_in_groups(disk)
+    group1 = group1.sort_values(['w']).reset_index(drop=True)
+    group2 = group2.sort_values(['w']).reset_index(drop=True)
+    rand1, rand2 = search_rand_blades_1(group1, group2)
+    temp2 = group2.iloc[rand2, :].copy(deep=True)
+    temp1 = group1.iloc[rand1, :].copy(deep=True)
+    group2.iloc[rand2, :] = temp1
+    group1.iloc[rand1, :] = temp2
+    # print(temp1, ": blade swap 1")
+    # print(temp2, ": blade swap 2")
+    # print((group1.loc[rand1].w > group2.w).value_counts())
     group1 = build_lobes(group1)
     group2 = build_lobes(group2)
     return concat_groups(group1, group2)
@@ -293,26 +318,30 @@ if __name__ == '__main__':
     data_file = os.path.join(DATA_SOURCE, "input-data.csv")
     disk = read_data(data_file)
 
-    group1, group2 = dispose_blades(disk, alpha=45)
+    print("start preplacing blades")
+    # alpha=0.05
+    alpha = 0.01
+    # group1, group2 = group_creation(disk, alpha)
+    group1, group2 = dispose_blades(disk, alpha)
     disposed = concat_groups(group1, group2)
+    print("done preplacing blades")
 
     disk.loc[:, ["w", "blade", "ht"]] = disposed[["w", "blade", "ht"]]
-
     plot_blades(disk)
 
-    # fx, fy = cpt_blades_imbalance(disk)
-    # unbalance_blades = math.sqrt(fx.sum() * fx.sum() + fy.sum() * fy.sum())
+    # # fx, fy = cpt_blades_imbalance(disk)
+    # # unbalance_blades = math.sqrt(fx.sum() * fx.sum() + fy.sum() * fy.sum())
 
-    init_state = disk
-    chg_state_func = random_neighbour_disk
-    ener_func = cost_function_unbalance
-    temp_func = temperature
-    max_steps = 500
-    search_param = 50
-    accept_proba = acceptance_probability
-    Simu = Simulated_annealing(init_state, chg_state_func, ener_func,
-                               temp_func, max_steps, accept_proba,
-                               search_param)
-    group1, group2 = split_in_groups(disk)
-    res = Simu.optimize()
-    plot_blades(res)
+    # init_state = disk
+    # chg_state_func = random_neighbour_disk
+    # ener_func = cost_function_unbalance
+    # temp_func = temperature
+    # max_steps = 500
+    # search_param = 50
+    # accept_proba = acceptance_probability
+    # Simu = Simulated_annealing(init_state, chg_state_func, ener_func,
+    #                            temp_func, max_steps, accept_proba,
+    #                            search_param)
+    # group1, group2 = split_in_groups(disk)
+    # res = Simu.optimize()
+    # plot_blades(res)
