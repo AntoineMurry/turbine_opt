@@ -7,13 +7,10 @@ import math
 import random
 
 import pandas as pd
-import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 
-import numpy.random as rn
-
-from papillon.data import DATA_SOURCE
+from turbine_opt.data import DATA_SOURCE
 
 pd.set_option('display.width', 200)
 
@@ -127,8 +124,8 @@ class Simulated_annealing:
                               'blade',
                               'ht']] = self.chg_state_func(state,
                                                            final_en)[['w',
-                                                                   'blade',
-                                                                   'ht']]
+                                                                      'blade',
+                                                                      'ht']]
             state_ener = self.ener_func(state)
             state_nw_ener = self.ener_func(state_new)
             proba = accept_proba(state_ener,
@@ -178,12 +175,10 @@ def plot_blades(disk):
     xplot = disk.bl_angle.map(math.cos) * (disk.w - wmin) * RADIUS
     yplot = disk.bl_angle.map(math.sin) * (disk.w - wmin) * RADIUS
     for x in range(len(xplot)):
-        plt.plot([0, xplot[x]],[0,yplot[x]],'ro-',label='python')
-    limit=np.max(np.ceil(np.absolute(xplot).astype(int)))
-    plt.xlim((-limit,limit))
-    plt.ylim((-limit,limit))
-    plt.ylabel('Imaginary')
-    plt.xlabel('Real')
+        plt.plot([0, xplot[x]], [0, yplot[x]], 'ro-', label='python')
+    limit = np.max(np.ceil(np.absolute(xplot).astype(int)))
+    plt.xlim((-limit, limit))
+    plt.ylim((-limit, limit))
     plt.show()
 
 
@@ -286,7 +281,7 @@ def search_rand_blades_2(group1, group2, search_param=10):
                        abs(group2.w - w_min).min()].index[0]
     max_index = group2[(group2.w - w_max).apply(abs) ==
                        abs(group2.w - w_max).min()].index[0]
-    choice = group2[min_index : max_index + 1]
+    choice = group2[min_index: max_index + 1]
 
     rand2 = random.randrange(choice.index.min(),
                              choice.index.max())
@@ -378,6 +373,7 @@ def concat_groups(group1, group2):
     disk = pd.concat([group1, group2]).reset_index(drop=True)
     return disk
 
+
 if __name__ == '__main__':
 
     # plotting unbalance:
@@ -385,7 +381,7 @@ if __name__ == '__main__':
     disk = read_data(data_file)
 
     print("start preplacing blades")
-    alpha=0.05
+    alpha = 0.05
     # alpha = 0.01
     # group1, group2 = group_creation(disk, alpha)
     group1, group2 = dispose_blades(disk, alpha)
