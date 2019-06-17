@@ -36,7 +36,7 @@ wheel:
 	@python setup.py bdist_wheel  # --universal if you are python2&3
 
 check_code:
-	@flake8 scripts/* twt_maps/*.py
+	@flake8 scripts/* turbine_opt/*.py
 
 test:
 	@coverage run -m unittest tests/*.py
