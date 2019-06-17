@@ -57,6 +57,8 @@ def proba_sampling(ordered_index, alpha=0.05, num_of_blades=140):
 def dispose_blades(disk, alpha=0.05):
     """
     dispose blades on disk to minimize unbalance
+    :input:
+        disk :: pd.DataFrame read from read_data
     """
     disk = disk.sort_values(['w'], ascending=False)
     disk = disk.reset_index()
@@ -71,6 +73,9 @@ def group_creation(disk, alpha):
     """
     split blades into 2 groups using random sampling
     based on weight
+    :input:
+        disk :: pd.DataFrame read from read_data
+        alpha :: distortion of Sigmoid
     """
     disk.loc[:, 'proba'] = disk['index'].apply(proba_sampling,
                                                args=(alpha, disk.shape[0]))
@@ -90,18 +95,29 @@ class Simulated_annealing:
     encapsulated simulated annealing class
     """
     def __init__(self, init_state, chg_state_func, ener_func, temp_func,
-                 max_steps, accept_proba, search_param):
+                 max_steps, accept_proba):
+        """
+        constructor
+        :input:
+            init_state :: initial state, e.g. initial vector
+            chg_state_func :: function to change update state at each iteration
+            ener_func :: energy function
+            temp_func :: temperature function
+            max_steps :: max number of steps
+            accept_proba :: probabilistic function of acceptance of new states
+        """
         self.init_state = init_state
         self.chg_state_func = chg_state_func
         self.ener_func = ener_func
         self.temp_func = temp_func
         self.max_steps = max_steps
         self.accept_proba = accept_proba
-        self.search_param = search_param
 
     def optimize(self):
+        """
+        optimization method
+        """
         state = self.init_state.copy()
-        print('def final state')
         final_state = self.init_state.copy()
         state_new = self.init_state.copy()
         for k in range(self.max_steps):
@@ -115,11 +131,10 @@ class Simulated_annealing:
                                                                    'ht']]
             state_ener = self.ener_func(state)
             state_nw_ener = self.ener_func(state_new)
-            print(state_nw_ener, ": state_nw_ener")
             proba = accept_proba(state_ener,
                                  state_nw_ener,
                                  temp)
-            print(final_en, ": self.ener_func(final state)")
+            # print(final_en, ": self.ener_func(final state)")
             if proba > np.random.sample():
                 state = state_new.copy()
             if self.ener_func(state) < final_en:
@@ -156,6 +171,8 @@ def temperature(k, kmax):
 def plot_blades(disk):
     """
     function to display blade weights on the turbine disk
+    :input:
+        disk :: pd.DataFrame read from read_data
     """
     wmin = disk.w.min()
     xplot = disk.bl_angle.map(math.cos) * (disk.w - wmin) * RADIUS
@@ -179,8 +196,9 @@ def build_lobes(group):
     creates 2 lobes from an input group of blades
     :input:
         group :: pd.DataFrame corresponding to group of blades
-    Note: this only works if the number of rows of group is a
+    Note: i) this only works if the number of rows of group is a
     multiple of 2
+          ii) input blades must be sorted by weight (increasingly)
     """
     df = pd.DataFrame(columns=group.columns, index=group.index)
     ind_first_bl = int((group.shape[0]/2 + 1)/2) - 1
@@ -205,7 +223,11 @@ def build_lobes(group):
 
 
 def cost_function_unbalance(disk):
-    """ Cost of disk"""
+    """
+    Cost of disk
+    :input:
+        disk :: pd.DataFrame read from read_data
+    """
     fx, fy = cpt_blades_imbalance(disk)
     unbalance_blades = math.sqrt(fx.sum() * fx.sum() + fy.sum() * fy.sum())
     return unbalance_blades
@@ -213,6 +235,11 @@ def cost_function_unbalance(disk):
 
 def split_in_groups(disk):
     """
+    splits disk into 2 groups of blades:
+        - group1 = group of heavier blades
+        - group2 = group of lighter blades
+    :input:
+        disk :: pd.DataFrame read from read_data
     """
     group1 = disk.iloc[:int(disk.shape[0]/2), :].reset_index(drop=True)
     group2 = disk.iloc[int(disk.shape[0]/2):, :].reset_index(drop=True)
@@ -221,6 +248,12 @@ def split_in_groups(disk):
 
 def search_rand_blades_1(group1, group2):
     """
+    randomly searches for 2 blades to swap between the
+    2 input groups
+    :input:
+        group1 :: pd.DataFrame corresponding to heavier group of blades
+    :input:
+        group2 :: pd.DataFrame corresponding to lighter group of blades
     """
     rand1 = random.choice(group1.index)
     group2.loc[:, "options"] = group1.loc[rand1].w > group2.w
@@ -230,6 +263,13 @@ def search_rand_blades_1(group1, group2):
 
 def search_rand_blades_2(group1, group2, search_param=10):
     """
+    randomly searches for 2 blades to swap between the
+    2 input groups.
+    limits the difference of weight between the swapped blades by using
+    search_param
+    :input:
+        group1 :: pd.DataFrame corresponding to heavier group of blades
+        group2 :: pd.DataFrame corresponding to lighter group of blades
     """
     rand1 = random.randrange(0, group1.shape[0])
     if (rand1 + search_param > group1.index.max()):
@@ -254,7 +294,11 @@ def search_rand_blades_2(group1, group2, search_param=10):
 
 
 def random_neighbour_disk(disk):
-    """swap a blade from group 1 with a blade from group 2"""
+    """
+    swap a blade from group 1 with a blade from group 2
+    :input:
+        disk :: pd.DataFrame read from read_data
+    """
     group1, group2 = split_in_groups(disk)
     group1 = group1.sort_values(['w']).reset_index(drop=True)
     group2 = group2.sort_values(['w']).reset_index(drop=True)
@@ -269,22 +313,31 @@ def random_neighbour_disk(disk):
 
 
 def naive_blade_swap(disk):
-    """swap a blade from group 1 with a blade from group 2"""
+    """
+    swap a blade from group 1 with a blade from group 2
+    :input:
+        disk :: pd.DataFrame read from read_data
+    """
     group1, group2 = split_in_groups(disk)
-    rand1 = random.randrange(0, group1.shape[0])
-    rand2 = random.randrange(0, group2.shape[0])
+    # rand1 = random.randrange(0, group1.shape[0])
+    rand1 = random.choice(group1.index)
+    # rand2 = random.randrange(0, group2.shape[0])
+    rand2 = random.choice(group2.index)
     temp2 = group2.iloc[rand2, :].copy(deep=True)
     temp1 = group1.iloc[rand1, :].copy(deep=True)
     group2.iloc[rand2, :] = temp1
     group1.iloc[rand1, :] = temp2
-    group1 = build_lobes(group1.copy())
-    group2 = build_lobes(group2.copy())
-    print(group2, ": group2")
+    group1 = build_lobes(group1.sort_values(['w']))
+    group2 = build_lobes(group2.sort_values(['w']))
     return concat_groups(group1, group2)
 
 
 def boosted_blade_swap(disk):
-    """swap a blade from group 1 with a blade from group 2"""
+    """
+    swap a blade from group 1 with a blade from group 2
+    :input:
+        disk :: pd.DataFrame read from read_data
+    """
     group1, group2 = split_in_groups(disk)
     group1 = group1.sort_values(['w']).reset_index(drop=True)
     group2 = group2.sort_values(['w']).reset_index(drop=True)
@@ -298,8 +351,8 @@ def boosted_blade_swap(disk):
     temp1 = group1.iloc[rand, :].copy(deep=True)
     group2.iloc[rand, :] = temp1
     group1.iloc[rand, :] = temp2
-    group1 = build_lobes(group1)
-    group2 = build_lobes(group2)
+    group1 = build_lobes(group1.sort_values(['w']))
+    group2 = build_lobes(group2.sort_values(['w']))
     return concat_groups(group1, group2)
 
 
@@ -318,6 +371,9 @@ def random_neighbour_choice(disk, energy):
 def concat_groups(group1, group2):
     """
     concatenate groups of blades to get assembled disk
+    :input:
+        group1 :: pd.DataFrame corresponding to heavier group of blades
+        group2 :: pd.DataFrame corresponding to lighter group of blades
     """
     disk = pd.concat([group1, group2]).reset_index(drop=True)
     return disk
@@ -339,25 +395,14 @@ if __name__ == '__main__':
     disk.loc[:, ["w", "blade", "ht"]] = disposed[["w", "blade", "ht"]]
     plot_blades(disk)
 
-    # # tempo test
-    # random.seed(0)
-    # from turbine_opt.data import DATA_SOURCE
-    # data_file = os.path.join(DATA_SOURCE, "test_data/input-data.csv")
-    # disk0 = read_data(data_file)
-    # disk = random_neighbour_disk_2(disk0) #, search_param):
-    # disk2 = random_neighbour_disk_2(disk)
-    # # tempo test end
-
     init_state = disk
     chg_state_func = random_neighbour_choice
     ener_func = cost_function_unbalance
     temp_func = temperature
     max_steps = 500
-    search_param = 50
     accept_proba = acceptance_probability
     Simu = Simulated_annealing(init_state, chg_state_func, ener_func,
-                               temp_func, max_steps, accept_proba,
-                               search_param)
+                               temp_func, max_steps, accept_proba)
     group1, group2 = split_in_groups(disk)
     res = Simu.optimize()
     plot_blades(res)
