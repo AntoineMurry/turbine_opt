@@ -144,8 +144,8 @@ def acceptance_probability(energy, new_energy, temperature):
     acceptance probability function, which decreases with
     temperature
     :input:
-        energy :: energy function from current state
-        new_energy :: energy function from new state
+        energy :: energy value from current state
+        new_energy :: energy value from new state
         temperature :: value of temperature from temperature function
     """
     if new_energy < energy:
