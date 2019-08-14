@@ -10,9 +10,6 @@ clean:
 
 all: clean install test check_code
 
-# install:
-# 	@pip install . -U
-
 install: clean wheel
 	@pip3 install -U dist/*.whl
 
@@ -26,10 +23,6 @@ prod_install: wheel
 
 install_requirements:
 	@pip install -r requirements.txt
-
-get_dependencies:
-	@python scripts/get_last_artifacts.py $(PRIVATE_TOKEN) infra/zf_tools
-	@echo downloading dependencies wheel...
 
 wheel:
 	@rm -f dist/*.whl
