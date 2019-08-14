@@ -252,7 +252,7 @@ def search_rand_blades_1(group1, group2):
     """
     rand1 = random.choice(group1.index)
     group2.loc[:, "options"] = group1.loc[rand1].w > group2.w
-    rand2 = random.choice((group2.options == True).index)
+    rand2 = random.choice((group2.options).index)
     return rand1, rand2
 
 
@@ -337,7 +337,7 @@ def boosted_blade_swap(disk):
     group1 = group1.sort_values(['w']).reset_index(drop=True)
     group2 = group2.sort_values(['w']).reset_index(drop=True)
     group2.loc[:, 'options'] = group2.w < group1.w
-    option_blades = group2[group2.options == True]
+    option_blades = group2[group2.options]
     if len(option_blades) > 0:
         rand = random.choice(option_blades.index)
     else:
