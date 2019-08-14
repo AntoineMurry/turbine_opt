@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
+import argparse
 
 from turbine_opt.data import DATA_SOURCE
 from turbine_opt.lib import read_data
@@ -22,6 +23,8 @@ if __name__ == '__main__':
     usage = 'turbine-opt-example'
     description = ('runs the optimization algorithm, from input-data.csv ' +
                    'sample in turbine_opt/data')
+    parser = argparse.ArgumentParser(description=description, usage=usage)
+
     # plotting unbalance:
     data_file = os.path.join(DATA_SOURCE, "input-data.csv")
     disk = read_data(data_file)
