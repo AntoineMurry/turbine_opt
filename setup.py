@@ -1,6 +1,8 @@
 from setuptools import find_packages
 from setuptools import setup
 
+# Python version used for development: 3.6.7
+
 requirements = """
 pyreadstat
 pip>=9
