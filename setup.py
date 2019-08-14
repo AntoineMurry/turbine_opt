@@ -9,5 +9,5 @@ setup(name='turbine_opt',
       test_suite = 'tests',
       # include_package_data: to install data from MANIFEST.in
       include_package_data=True,
-      scripts=[],
+      scripts=['scripts/turbine-opt-example'],
       zip_safe=False)
