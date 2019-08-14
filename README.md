@@ -28,6 +28,7 @@ In order for the user to be able to play with the package, a sample of data
 corresponds to a set of blades which needs to be distributed in an optimal
 manner on the turbine, in order to minimize global unbalance.
 
+```
 .
 ├── Makefile
 ├── README.md
@@ -46,3 +47,5 @@ manner on the turbine, in order to minimize global unbalance.
     ├── __init__.py
     ├── lib.py
     └── version.txt
+
+```
