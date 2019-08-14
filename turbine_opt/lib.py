@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 # Copyright (C) 2018 Antoine Murry
-""" Main lib for papillon Project
+""" Main lib for turbine-opt Project
 """
 import os
 import math
