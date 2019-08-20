@@ -1,29 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
-import argparse
 
 from turbine_opt.data import DATA_SOURCE
 from turbine_opt.lib import read_data
 from turbine_opt.lib import dispose_blades
 from turbine_opt.lib import concat_groups
 from turbine_opt.lib import plot_blades
-from turbine_opt.lib import random_neighbour_choice
-from turbine_opt.lib import cost_function_unbalance
-from turbine_opt.lib import temperature
-from turbine_opt.lib import acceptance_probability
-from turbine_opt.lib import Simulated_annealing
 from turbine_opt.lib import split_in_groups
+from turbine_opt.optimization import random_neighbour_choice
+from turbine_opt.optimization import cost_function_unbalance
+from turbine_opt.optimization import temperature
+from turbine_opt.optimization import acceptance_probability
+from turbine_opt.optimization import Simulated_annealing
 
 """
 Command to test the balancing algorithm, and plot results
 """
 
 if __name__ == '__main__':
-    usage = 'turbine-opt-example'
-    description = ('runs the optimization algorithm, from input-data.csv ' +
-                   'sample in turbine_opt/data')
-    parser = argparse.ArgumentParser(description=description, usage=usage)
 
     # plotting unbalance:
     data_file = os.path.join(DATA_SOURCE, "input-data.csv")
