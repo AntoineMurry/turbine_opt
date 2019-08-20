@@ -12,7 +12,7 @@ to a global unbalance which can break the turbine when it rotates at high
 Another constraint is that the different weights should form up 4 lobes of
 mass, in order to maximize turbine lifespan.
 
-A script has been created for demo. Install the mackage by typing
+A script has been created for demo. Install the package by typing
  "$ make install" at package root, then simply type "$ turbine-opt-example".
 
 Below is the tree of the package. 
