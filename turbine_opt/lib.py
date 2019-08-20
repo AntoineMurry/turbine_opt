@@ -274,36 +274,4 @@ def concat_groups(group1, group2):
 
 
 if __name__ == '__main__':
-
-    from turbine_opt.optimization import random_neighbour_choice
-    from turbine_opt.optimization import cost_function_unbalance
-    from turbine_opt.optimization import temperature
-    from turbine_opt.optimization import acceptance_probability
-    from turbine_opt.optimization import Simulated_annealing
-
-    # plotting unbalance:
-    data_file = os.path.join(DATA_SOURCE, "input-data.csv")
-    disk = read_data(data_file)
-
-    print("start preplacing blades")
-    alpha = 0.05
-    # alpha = 0.01
-    # group1, group2 = group_creation(disk, alpha)
-    group1, group2 = dispose_blades(disk, alpha)
-    disposed = concat_groups(group1, group2)
-    print("done preplacing blades")
-
-    disk.loc[:, ["w", "blade", "ht"]] = disposed[["w", "blade", "ht"]]
-    plot_blades(disk)
-
-    init_state = disk
-    chg_state_func = random_neighbour_choice
-    ener_func = cost_function_unbalance
-    temp_func = temperature
-    max_steps = 500
-    accept_proba = acceptance_probability
-    Simu = Simulated_annealing(init_state, chg_state_func, ener_func,
-                               temp_func, max_steps, accept_proba)
-    group1, group2 = split_in_groups(disk)
-    res = Simu.optimize()
-    plot_blades(res)
+    pass
