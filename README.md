@@ -12,14 +12,13 @@ to a global unbalance which can break the turbine when it rotates at high
 Another constraint is that the different weights should form up 4 lobes of
 mass, in order to maximize turbine lifespan.
 
-Please run lib.py in ipython for testing, results will show up as images.
-A script is being written to call the optimzation automatically from command line.
-
+A script has been created for demo. Install the mackage by typing
+ "$ make install" at package root, then simply type "$ turbine-opt-example".
 
 Below is the tree of the package. 
 
-For now, all code in in lib.py, TODO: split per function, e.g. Optimization
-objects should be in a separated python file.
+Optimization code is in optimization.py, other code specific to the
+turbine problem is in lib.py.
 
 Unit tests are in the tests/ folder.
 
@@ -27,6 +26,7 @@ In order for the user to be able to play with the package, a sample of data
 (input-data.csv) has be placed in turbine-opt/data/. This dataset
 corresponds to a set of blades which needs to be distributed in an optimal
 manner on the turbine, in order to minimize global unbalance.
+
 
 ```
 .
@@ -37,7 +37,8 @@ manner on the turbine, in order to minimize global unbalance.
 ├── setup.py
 ├── tests
 │   ├── __init__.py
-│   └── lib_tests.py
+│   ├── lib_tests.py
+│   └── optimi_tests.py
 ├── turbine_opt
     ├── data
     │   ├── __init__.py
@@ -46,6 +47,7 @@ manner on the turbine, in order to minimize global unbalance.
     │       ├── input-data.csv
     ├── __init__.py
     ├── lib.py
+    ├── optimization.py
     └── version.txt
 
 ```
