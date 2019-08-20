@@ -2,15 +2,12 @@
 # Copyright (C) 2018 Antoine Murry
 """ Main lib for turbine-opt Project
 """
-import os
 import math
 import random
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-
-from turbine_opt.data import DATA_SOURCE
 
 pd.set_option('display.width', 200)
 
