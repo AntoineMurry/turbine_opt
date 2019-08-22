@@ -14,6 +14,55 @@ pd.set_option('display.width', 200)
 RADIUS = 10
 
 
+def random_neighbour_choice(disk, energy):
+    """
+    swap a blade from group 1 with a blade from group 2
+    if energy > 40: use boosted blade swap
+    if energy < 40: use naive blade swap
+    """
+    if energy > 40:
+        return boosted_blade_swap(disk.copy())
+    else:
+        return naive_blade_swap(disk.copy())
+
+
+def cost_function_unbalance(disk):
+    """
+    Cost of disk
+    :input:
+        disk :: pd.DataFrame read from read_data
+    """
+    fx, fy = cpt_blades_imbalance(disk)
+    unbalance_blades = math.sqrt(fx.sum() * fx.sum() + fy.sum() * fy.sum())
+    return unbalance_blades
+
+
+def temperature(k, kmax):
+    """
+    decreasing temperature function
+    :input:
+        k :: current iteration
+        kmax :: max number of iterations
+    """
+    return max(0.01, min(1, 1 - float(k)/float(kmax)))
+
+
+def acceptance_probability(energy, new_energy, temperature):
+    """
+    acceptance probability function, which decreases with
+    temperature
+    :input:
+        energy :: energy value from current state
+        new_energy :: energy value from new state
+        temperature :: value of temperature from temperature function
+    """
+    if new_energy < energy:
+        return 1
+    else:
+        p = np.exp(- (new_energy - energy) / temperature)
+        return p
+
+
 def read_data(data_file):
     """
     reads input vector, computes all angles
