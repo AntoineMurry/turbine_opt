@@ -8,10 +8,10 @@ from turbine_opt.lib import dispose_blades
 from turbine_opt.lib import concat_groups
 from turbine_opt.lib import plot_blades
 from turbine_opt.lib import split_in_groups
-from turbine_opt.optimization import random_neighbour_choice
-from turbine_opt.optimization import cost_function_unbalance
-from turbine_opt.optimization import temperature
-from turbine_opt.optimization import acceptance_probability
+from turbine_opt.lib import random_neighbour_choice
+from turbine_opt.lib import cost_function_unbalance
+from turbine_opt.lib import temperature
+from turbine_opt.lib import acceptance_probability
 from turbine_opt.optimization import Simulated_annealing
 
 """
