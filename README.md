@@ -32,6 +32,7 @@ To DO: wrap model into web app (flask or django) to create user-friendly interfa
 
 ```
 .
+├── build
 ├── Makefile
 ├── README.md
 ├── scripts
@@ -39,7 +40,9 @@ To DO: wrap model into web app (flask or django) to create user-friendly interfa
 ├── setup.py
 ├── tests
 │   ├── __init__.py
-│   ├── lib_tests.py │   └── optimi_tests.py ├── turbine_opt    ├── data
+│   └── lib_tests.py
+├── turbine_opt
+    ├── data
     │   ├── __init__.py
     │   ├── input-data.csv
     │   └── test_data
