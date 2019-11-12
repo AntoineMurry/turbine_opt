@@ -4,7 +4,7 @@ Balancing turbines by optimizing blade distribution
 
 Python package, with optimization object -Simulated Annealing model-.
 
-This package help distribute blades on a turbine in order to minimize global
+This package helps distribute blades on a turbine in order to minimize global
 unbalance. Distributing blades with different masses randomly would lead
 to a global unbalance which can break the turbine when it rotates at high
  speed.
